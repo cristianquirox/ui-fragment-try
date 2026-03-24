@@ -18,6 +18,13 @@ const estadosTicket = [
   }
 ];
 
+const ticketInfo = {
+  summary: "Aplicaciones | Incidentes de aplicaciones | Lentitud / Sin respuesta | Cristian Quiroz Garcia",
+  status: "EN QA USUARIO",
+  created: "2026-03-24T15:42:49.541Z",
+  updated: "2026-03-24T19:49:58.758Z"
+};
+
 // ==========================
 // 2. Utilidades de fechas
 // ==========================
@@ -50,6 +57,66 @@ function formatearDuracion(minTotal) {
   const h = String(horas).padStart(2, "0");
   const m = String(minutos).padStart(2, "0");
   return `${h}:${m}`;
+}
+
+function actualizarTexto(id, value) {
+  const element = document.getElementById(id);
+  if (element) {
+    element.textContent = value;
+  }
+}
+
+function renderTicketInfo(issueKey) {
+  actualizarTexto("issue-key", issueKey || "N/D");
+  actualizarTexto("issue-summary", ticketInfo.summary);
+  actualizarTexto("issue-status", ticketInfo.status);
+  actualizarTexto("issue-created", ticketInfo.created);
+  actualizarTexto("issue-updated", ticketInfo.updated);
+}
+
+function extraerIssueKeyDesdeObjeto(contextObj) {
+  if (!contextObj || typeof contextObj !== "object") {
+    return null;
+  }
+
+  const candidates = [
+    contextObj.issueKey,
+    contextObj?.context?.issueKey,
+    contextObj?.jira?.issue?.key,
+    contextObj?.issue?.key,
+    contextObj?.extension?.issue?.key,
+    contextObj?.extension?.issueKey
+  ];
+
+  return candidates.find(value => typeof value === "string" && value.trim().length > 0) || null;
+}
+
+function obtenerIssueKeyDesdeAP() {
+  return new Promise(resolve => {
+    if (!window.AP || !window.AP.context || typeof AP.context.getContext !== "function") {
+      resolve(null);
+      return;
+    }
+
+    AP.context.getContext((ctx) => {
+      resolve(extraerIssueKeyDesdeObjeto(ctx));
+    });
+  });
+}
+
+async function obtenerIssueKey() {
+  const bridgeContext = window.AdaptavistBridgeContext;
+  const fromBridge = extraerIssueKeyDesdeObjeto(bridgeContext);
+  if (fromBridge) {
+    return fromBridge;
+  }
+
+  const fromAP = await obtenerIssueKeyDesdeAP();
+  if (fromAP) {
+    return fromAP;
+  }
+
+  return "CDSP-44";
 }
 
 // ==========================
@@ -174,12 +241,16 @@ function activarAutoResizeJira() {
   window.addEventListener("resize", jiraResizeToContent);
 }
 
-// Inicializar
-renderTablaEstados();
-renderTimeline();
+async function inicializar() {
+  const issueKey = await obtenerIssueKey();
+  renderTicketInfo(issueKey);
+  renderTablaEstados();
+  renderTimeline();
 
-// Forzar resize luego de pintar el DOM
-setTimeout(jiraResizeToContent, 50);
-setTimeout(jiraResizeToContent, 250);
-setTimeout(jiraResizeToContent, 500);
-activarAutoResizeJira();
+  setTimeout(jiraResizeToContent, 50);
+  setTimeout(jiraResizeToContent, 250);
+  setTimeout(jiraResizeToContent, 500);
+  activarAutoResizeJira();
+}
+
+inicializar();
