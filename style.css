@@ -74,15 +74,15 @@ tbody tr:nth-child(even) {
   text-overflow: ellipsis;
 }
 
-.segment.CREADO {
+.segment.estado-CREADO {
   background: #deebff;
 }
 
-.segment["EN ATENCIÓN"] {
+.segment.estado-EN-ATENCION {
   background: #e3fcef;
 }
 
-.segment["EN QA USUARIO"] {
+.segment.estado-EN-QA-USUARIO {
   background: #fffae6;
 }
 

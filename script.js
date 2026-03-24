@@ -113,8 +113,7 @@ function renderTimeline() {
 
     const div = document.createElement("div");
     div.className = "segment";
-    // Clase adicional sin espacios para poder estilizar si quieres en CSS
-    const claseEstado = "estado-" + seg.estado.replace(/\s+/g, "-").toUpperCase();
+    const claseEstado = "estado-" + normalizarParaClase(seg.estado);
     div.classList.add(claseEstado);
 
     div.style.width = ancho + "%";
@@ -143,8 +142,16 @@ function renderTimeline() {
   container.appendChild(totalDiv);
 }
 
+function normalizarParaClase(texto) {
+  return texto
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^A-Za-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .toUpperCase();
+}
+
 function jiraResizeToContent() {
-  // Si estás en Jira (iframe con AP disponible)
   if (window.AP && typeof AP.resize === "function") {
     const height = Math.max(
       document.body.scrollHeight,
@@ -154,6 +161,19 @@ function jiraResizeToContent() {
   }
 }
 
+function activarAutoResizeJira() {
+  jiraResizeToContent();
+
+  if (window.AP && typeof AP.sizeToParent === "function") {
+    AP.sizeToParent();
+  }
+
+  const observer = new MutationObserver(() => jiraResizeToContent());
+  observer.observe(document.body, { childList: true, subtree: true, attributes: true });
+
+  window.addEventListener("resize", jiraResizeToContent);
+}
+
 // Inicializar
 renderTablaEstados();
 renderTimeline();
@@ -161,3 +181,5 @@ renderTimeline();
 // Forzar resize luego de pintar el DOM
 setTimeout(jiraResizeToContent, 50);
 setTimeout(jiraResizeToContent, 250);
+setTimeout(jiraResizeToContent, 500);
+activarAutoResizeJira();
